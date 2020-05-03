@@ -320,6 +320,17 @@ Default value
 Description
 : The password to use for SASL authentication.
 
+### sasl.mechanisms
+Type
+: Array<Cinch::SASL::Mechanism>
+
+Default value
+: `[Cinch::SASL::DH_Blowfish, Cinch::SASL::Plain]`
+
+Description
+: The SASL mechanisms to use. All mechanisms in the array will be
+attempted, until one was successful
+
 ## server
 Type
 : String
@@ -432,3 +443,12 @@ Default value
 Description
 : Give up connecting after this amount of seconds.
 
+## default_logger_level
+Type
+: Symbol
+
+Default value
+: `:debug`
+
+Description
+: Modify the log level of the default logger, for instance, the bot will log very little if you set this value to `:fatal`.  

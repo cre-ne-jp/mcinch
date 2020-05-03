@@ -103,7 +103,7 @@ module Cinch
     # @see #safe_notice
     # @see #notice
     def safe_notice(text)
-      safe_msg(text, true)
+      safe_send(text, true)
     end
 
     # Invoke an action (/me) in/to the target.
@@ -112,7 +112,8 @@ module Cinch
     # @return [void]
     # @see #safe_action
     def action(text)
-      @bot.irc.send("PRIVMSG #@name :\001ACTION #{text}\001")
+      line = text.to_s.each_line.first.chomp
+      @bot.irc.send("PRIVMSG #@name :\001ACTION #{line}\001")
     end
 
     # Like {#action}, but remove any non-printable characters from
@@ -128,7 +129,7 @@ module Cinch
     # @return (see #action)
     # @see #action
     def safe_action(text)
-      action(Cinch::Helpers.Sanitize(text))
+      action(Cinch::Helpers.sanitize(text))
     end
 
     # Send a CTCP to the target.
@@ -187,12 +188,12 @@ module Cinch
         r = [msg.rindex(/\s/, max_rune) || (max_rune + 1), 1].max
 
         splitted << (msg[0...r] + split_end)
-        msg = split_start.tr(" ", "\z") + msg[r..-1].lstrip
+        msg = split_start.tr(" ", "\cz") + msg[r..-1].lstrip
       end
       splitted << msg
 
       # clean string from any substitute characters
-      splitted.map {|string| string.tr("\z", " ")}
+      splitted.map {|string| string.tr("\cz", " ")}
     end
   end
 end

@@ -77,9 +77,9 @@ module Cinch
             fd = nil
             Timeout.timeout(30) do
               fd, _ = @socket.accept
-              send_data(fd)
-              fd.close
             end
+            send_data(fd)
+            fd.close
           ensure
             @socket.close
           end
@@ -104,9 +104,16 @@ module Cinch
           @io.advise(:sequential)
 
           while chunk = @io.read(8096)
-            rs, ws = IO.select([fd], [fd])
-            rs.first.recv         unless rs.empty?
-            ws.first.write(chunk) unless ws.empty?
+            while true
+              rs, ws = IO.select([fd], [fd])
+              if !rs.empty?
+                rs.first.recv(8096)
+              end
+              if !ws.empty?
+                ws.first.write(chunk)
+                break
+              end
+            end
           end
         end
       end

@@ -115,7 +115,7 @@ module Cinch
     end
 
     # @private
-    def authname_unynced
+    def authname_unsynced
       attr(:authname, true, true)
     end
 
@@ -185,7 +185,8 @@ module Cinch
     # @api private
     attr_writer :monitored
 
-
+    # @note Generally, you shouldn't initialize new instances of this
+    #   class. Use {UserList#find_ensured} instead.
     def initialize(*args)
       @data = {
         :user         => nil,
@@ -269,14 +270,22 @@ module Cinch
 
     # @param [Hash, nil] values A hash of values gathered from WHOIS,
     #   or `nil` if no data was returned
-    # @param [Boolean] not_found Has to be true if WHOIS resulted in
-    #   an unknown user
     # @return [void]
     # @api private
     # @since 1.0.1
-    def end_of_whois(values, not_found = false)
+    def end_of_whois(values)
       @in_whois = false
-      if not_found
+      if values.nil?
+        # for some reason, we did not receive user information. one
+        # reason is freenode throttling WHOIS
+        Thread.new do
+          sleep 2
+          refresh
+        end
+        return
+      end
+
+      if values[:unknown?]
         sync(:unknown?, true, true)
         self.online = false
         sync(:idle, 0, true)
@@ -290,16 +299,6 @@ module Cinch
           sync(field, nil, true)
         end
 
-        return
-      end
-
-      if values.nil?
-        # for some reason, we did not receive user information. one
-        # reason is freenode throttling WHOIS
-        Thread.new do
-          sleep 2
-          refresh
-        end
         return
       end
 

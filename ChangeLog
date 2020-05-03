@@ -1,3 +1,37 @@
+* Cinch 2.3.2, 25 April 2016
+  - Fix exception and premature timeouts in DCC send
+
+* Cinch 2.3.1, 01 November 2015
+  - Fix logging of exceptions, which was broken by Cinch 2.3.0
+  - Fix the accidental removal of hooks. This could lead to hooks
+    never executing or being removed under certain conditions. Anyone
+    relying on hooks, especially those using them for ACL systems,
+    should update to Cinch 2.3.1.
+
+* Cinch 2.3.0, 26 October 2015
+  - Add basic support for STATUSMSG messages. These are messages
+    directed at voiced or ops in a channel, by sending a message to
+    +#channel or @#channel. Cinch will now correctly identify those as
+    channel messages. Channel#reply will reply to the same group of
+    people, and Channel#statusmsg_mode will contain the mode that was
+    addressed.
+  - Add support for filtering log messages, allowing to hide passwords
+    and other confidential information. See
+    http://www.rubydoc.info/gems/cinch/file/docs/logging.md for more
+    information.
+
+* Cinch 2.2.8, 23 October 2015
+  - Fix WHOIS retry code, don't raise an exception
+
+* Cinch 2.2.7, 28 September 2015
+  - Don't replace the letter "z" with spaces when splitting long
+    messages
+
+* Cinch 2.2.6, 08 July 2015
+  - Better support for Slack
+  - Support channel owners on InspIRCd
+  - Don't get stuck in a WHOIS forever on certain servers
+
 * Cinch 2.2.5, 30 March 2015
   - Correctly split messages containing multibyte characters
   - Fix User#authname on servers that send both 330 (WHOISACCOUNT) and

@@ -21,6 +21,9 @@ module Cinch
 
     # @return [Array<String>]
     attr_reader :params
+    
+    # @return [Hash]
+    attr_reader :tags
 
     # @return [Array<Symbol>]
     attr_reader :events
@@ -66,20 +69,36 @@ module Cinch
     # @return [Target]
     attr_reader :target
 
+    # The STATUSMSG mode a channel message was sent to.
+    #
+    # Some IRC servers allow sending messages limited to people in a
+    # channel who have a certain mode. For example, by sending a
+    # message to `+#channel`, only people who are voiced, or have a
+    # higher mode (op) will receive the message.
+    #
+    # This attribute contains the mode character the message was sent
+    # to, or nil if it was a normal message. For the previous example,
+    # this attribute would be set to `"v"`, for voiced.
+    #
+    # @return [String, nil]
+    # @since 2.3.0
+    attr_reader :statusmsg_mode
+
     def initialize(msg, bot)
       @raw     = msg
       @bot     = bot
       @matches = {:ctcp => {}, :action => {}, :other => {}}
       @events  = []
       @time    = Time.now
+      @statusmsg_mode = nil
       parse if msg
     end
 
     # @api private
     # @return [void]
     def parse
-      match = @raw.match(/(^:(\S+) )?(\S+)(.*)/)
-      _, @prefix, @command, raw_params = match.captures
+      match = @raw.match(/(?:^@([^:]+))?(?::?(\S+) )?(\S+)(.*)/)
+      tags, @prefix, @command, raw_params = match.captures
 
       if @bot.irc.network.ngametv?
         if @prefix != "ngame"
@@ -88,9 +107,10 @@ module Cinch
       end
 
       @params  = parse_params(raw_params)
+      @tags    = parse_tags(tags)
 
       @user    = parse_user
-      @channel = parse_channel
+      @channel, @statusmsg_mode = parse_channel
       @target  = @channel || @user
       @server  = parse_server
       @error   = parse_error
@@ -160,6 +180,11 @@ module Cinch
     # Replies to a message, automatically determining if it was a
     # channel or a private message.
     #
+    # If the message is a STATUSMSG, i.e. it was send to `+#channel`
+    # or `@#channel` instead of `#channel`, the reply will be sent as
+    # the same kind of STATUSMSG. See {#statusmsg_mode} for more
+    # information on STATUSMSG.
+    #
     # @param [String] text the message
     # @param [Boolean] prefix if prefix is true and the message was in
     #   a channel, the reply will be prefixed by the nickname of whoever
@@ -171,10 +196,10 @@ module Cinch
         text = text.split("\n").map {|l| "#{user.nick}: #{l}"}.join("\n")
       end
 
-      @target.send(text)
+      reply_target.send(text)
     end
 
-    # Like #reply, but using {Target#safe_send} instead
+    # Like {#reply}, but using {Target#safe_send} instead
     #
     # @param (see #reply)
     # @return (see #reply)
@@ -183,25 +208,27 @@ module Cinch
       if channel && prefix
         text = "#{@user.nick}: #{text}"
       end
-      @target.safe_send(text)
+      reply_target.safe_send(text)
     end
 
     # Reply to a message with an action.
+    #
+    # For its behaviour with regard to STATUSMSG, see {#reply}.
     #
     # @param [String] text the action message
     # @return [void]
     def action_reply(text)
       text = text.to_s
-      @target.action(text)
+      reply_target.action(text)
     end
 
-    # Like #action_reply, but using {Target#safe_action} instead
+    # Like {#action_reply}, but using {Target#safe_action} instead
     #
     # @param (see #action_reply)
     # @return (see #action_reply)
     def safe_action_reply(text)
       text = text.to_s
-      @target.safe_action(text)
+      reply_target.safe_action(text)
     end
 
     # Reply to a CTCP message
@@ -221,6 +248,13 @@ module Cinch
     end
 
     private
+    def reply_target
+      if @channel.nil? || @statusmsg_mode.nil?
+        return @target
+      end
+      prefix = @bot.irc.isupport["PREFIX"][@statusmsg_mode]
+      return Target.new(prefix + @channel.name, @bot)
+    end
     def regular_command?
       !numeric_reply? # a command can only be numeric or "regular"…
     end
@@ -235,6 +269,33 @@ module Cinch
       end
 
       return params
+    end
+    
+    def parse_tags(raw_tags)
+      return {} if raw_tags.nil?
+      
+      def to_symbol(string)
+        return string.gsub(/-/, "_").downcase.to_sym
+      end
+      
+      tags = {}
+      raw_tags.split(";").each do |tag|
+        tag_name, tag_value = tag.split("=")
+        if tag_value =~ /,/
+          tag_value = tag_value.split(',')
+        elsif tag_value.nil?
+          tag_value = tag_name
+        end
+        if tag_name =~ /\//
+          vendor, tag_name = tag_name.split('/')
+          tags[to_symbol(vendor)] = {
+            to_symbol(tag_name) => tag_value
+          }
+        else
+          tags[to_symbol(tag_name)] = tag_value
+        end
+      end
+      return tags
     end
 
     def parse_user
@@ -262,12 +323,24 @@ module Cinch
         # `QUIT :#sometext` will be interpreted as a channel. The
         # alternative to the currently used heuristic would be to
         # hardcode a list of commands that provide a channel argument.
-        chantypes = @bot.irc.isupport["CHANTYPES"]
-        if chantypes.include?(@params.first[0])
-          @bot.channel_list.find_ensured(@params.first)
-        elsif numeric_reply? and @params.size > 1 and chantypes.include?(@params[1][0])
-          @bot.channel_list.find_ensured(@params[1])
+        ch, status = privmsg_channel_name(@params.first)
+        if ch.nil? && numeric_reply? && @params.size > 1
+          ch, status = privmsg_channel_name(@params[1])
         end
+        if ch
+          return @bot.channel_list.find_ensured(ch), status
+        end
+      end
+    end
+
+    def privmsg_channel_name(s)
+      chantypes = @bot.irc.isupport["CHANTYPES"]
+      statusmsg = @bot.irc.isupport["STATUSMSG"]
+      if statusmsg.include?(s[0]) && chantypes.include?(s[1])
+        status = @bot.irc.isupport["PREFIX"].invert[s[0]]
+        return s[1..-1], status
+      elsif chantypes.include?(s[0])
+        return s, nil
       end
     end
 
