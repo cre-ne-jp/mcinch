@@ -1,3 +1,10 @@
 source 'https://rubygems.org'
-gem 'minitest-autotest'
-gem 'rake'
+
+group :test do
+  gem 'minitest-autotest'
+  gem 'rubocop'
+end
+
+group :development do
+  gem 'rake'
+end
