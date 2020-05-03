@@ -83,8 +83,8 @@ module Cinch
     # @return [Boolean] whether the bot is in the process of disconnecting
     attr_reader :quitting
 
-    # @return [String] quit message to send to server
-    attr_reader :quit_message
+    # @return [Queue] queue for gentle process of disconnecting
+    attr_reader :quit_queue
 
     # @return [UserList] All {User users} the bot knows about.
     # @see UserList
@@ -227,7 +227,7 @@ module Cinch
     # @return [void]
     def quit(message = nil)
       @quitting = true
-      @quit_message = message ? "QUIT :#{message}" : "QUIT"
+      @quit_queue.push([:quit, message])
     end
 
     # Connects the bot to a server.
@@ -343,6 +343,7 @@ module Cinch
       @callback         = Callback.new(self)
       @channels         = []
       @quitting         = false
+      @quit_queue       = Queue.new
       @modes            = []
 
       @user_list    = UserList.new(self)

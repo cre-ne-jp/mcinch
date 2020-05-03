@@ -198,11 +198,23 @@ module Cinch
     # @since 2.0.0
     def start_quit_thread
       Thread.new do
-        # Check every 1 second if the bot needs to be shut down.
-        while !@bot.quitting
-          sleep 1
+        sent_quit = false
+
+        loop do
+          command, *args = @bot.quit_queue.pop
+          case command
+          when :stop
+            break
+          when :quit
+            unless sent_quit
+              message = args[0]
+              command = message ? "QUIT :#{message}" : 'QUIT'
+              send(command)
+
+              sent_quit = true
+            end
+          end
         end
-        send(@bot.quit_message)
       end
     end
 
@@ -235,7 +247,9 @@ module Cinch
         reading_thread.join
         sending_thread.kill
         ping_thread.kill
-        quit_thread.kill
+
+        @bot.quit_queue.push([:stop])
+        quit_thread.join
       end
     end
 
