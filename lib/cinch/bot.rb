@@ -1,61 +1,60 @@
-# -*- coding: utf-8 -*-
+# frozen_string_literal: true
+
 require 'socket'
-require "thread"
-require "ostruct"
-require "cinch/rubyext/module"
-require "cinch/rubyext/string"
-require "cinch/rubyext/float"
+require 'ostruct'
+require 'cinch/rubyext/module'
+require 'cinch/rubyext/string'
+require 'cinch/rubyext/float'
 
-require "cinch/exceptions"
+require 'cinch/exceptions'
 
-require "cinch/handler"
-require "cinch/helpers"
+require 'cinch/handler'
+require 'cinch/helpers'
 
-require "cinch/logger_list"
-require "cinch/logger"
+require 'cinch/logger_list'
+require 'cinch/logger'
 
-require "cinch/logger/formatted_logger"
-require "cinch/syncable"
-require "cinch/message"
-require "cinch/message_queue"
-require "cinch/irc"
-require "cinch/target"
-require "cinch/channel"
-require "cinch/user"
-require "cinch/constants"
-require "cinch/callback"
-require "cinch/ban"
-require "cinch/mask"
-require "cinch/isupport"
-require "cinch/plugin"
-require "cinch/pattern"
-require "cinch/mode_parser"
-require "cinch/dcc"
-require "cinch/sasl"
+require 'cinch/logger/formatted_logger'
+require 'cinch/syncable'
+require 'cinch/message'
+require 'cinch/message_queue'
+require 'cinch/irc'
+require 'cinch/target'
+require 'cinch/channel'
+require 'cinch/user'
+require 'cinch/constants'
+require 'cinch/callback'
+require 'cinch/ban'
+require 'cinch/mask'
+require 'cinch/isupport'
+require 'cinch/plugin'
+require 'cinch/pattern'
+require 'cinch/mode_parser'
+require 'cinch/dcc'
+require 'cinch/sasl'
 
-require "cinch/handler_list"
-require "cinch/cached_list"
-require "cinch/channel_list"
-require "cinch/user_list"
-require "cinch/plugin_list"
+require 'cinch/handler_list'
+require 'cinch/cached_list'
+require 'cinch/channel_list'
+require 'cinch/user_list'
+require 'cinch/plugin_list'
 
-require "cinch/timer"
-require "cinch/formatting"
+require 'cinch/timer'
+require 'cinch/formatting'
 
-require "cinch/configuration"
-require "cinch/configuration/bot"
-require "cinch/configuration/plugins"
-require "cinch/configuration/ssl"
-require "cinch/configuration/timeouts"
-require "cinch/configuration/dcc"
-require "cinch/configuration/sasl"
+require 'cinch/configuration'
+require 'cinch/configuration/bot'
+require 'cinch/configuration/plugins'
+require 'cinch/configuration/ssl'
+require 'cinch/configuration/timeouts'
+require 'cinch/configuration/dcc'
+require 'cinch/configuration/sasl'
 
 module Cinch
   # @attr nick
   # @version 2.0.0
   class Bot < User
     include Helpers
-
 
     # @return [Configuration::Bot]
     # @version 2.0.0
@@ -203,10 +202,10 @@ module Cinch
                   end
                 end
 
-      handler = Handler.new(self, event, pattern, {args: args, execute_in_callback: true}, &block)
+      handler = Handler.new(self, event, pattern, { args: args, execute_in_callback: true }, &block)
       @handlers.register(handler)
 
-      return handler
+      handler
     end
 
     # @endgroup
@@ -245,26 +244,24 @@ module Cinch
           user.unsync_all
         end # reset state of all users
 
-        @channel_list.each do |channel|
-          channel.unsync_all
-        end # reset state of all channels
+        @channel_list.each(&:unsync_all) # reset state of all channels
 
         @channels = [] # reset list of channels the bot is in
 
-        @join_handler.unregister if @join_handler
-        @join_timer.stop if @join_timer
+        @join_handler&.unregister
+        @join_timer&.stop
 
-        join_lambda = lambda { @config.channels.each { |channel| Channel(channel).join }}
+        join_lambda = -> { @config.channels.each { |channel| Channel(channel).join } }
 
         if @config.delay_joins.is_a?(Symbol)
-          @join_handler = join_handler = on(@config.delay_joins) {
+          @join_handler = join_handler = on(@config.delay_joins) do
             join_handler.unregister
             join_lambda.call
-          }
+          end
         else
-          @join_timer = Timer.new(self, interval: @config.delay_joins, shots: 1) {
+          @join_timer = Timer.new(self, interval: @config.delay_joins, shots: 1) do
             join_lambda.call
-          }
+          end
         end
 
         @modes = []
@@ -291,7 +288,7 @@ module Cinch
             sleep 1
           end
         end
-      end while @config.reconnect and not @quitting
+      end while @config.reconnect && !@quitting
     end
 
     # @endgroup
@@ -333,11 +330,11 @@ module Cinch
 
     # @yield
     def initialize(&b)
-      @config           = Configuration::Bot.new
+      @config = Configuration::Bot.new
 
       @loggers = LoggerList.new
       @loggers << Logger::FormattedLogger.new($stderr, level: @config.default_logger_level)
-      @handlers         = HandlerList.new
+      @handlers = HandlerList.new
       @semaphores_mutex = Mutex.new
       @semaphores       = Hash.new { |h, k| h[k] = Mutex.new }
       @callback         = Callback.new(self)
@@ -421,9 +418,10 @@ module Cinch
     end
 
     def nick=(new_nick)
-      if new_nick.size > @irc.isupport["NICKLEN"] && strict?
+      if new_nick.size > @irc.isupport['NICKLEN'] && strict?
         raise Exceptions::NickTooLong, new_nick
       end
+
       @config.nick = new_nick
       @irc.send "NICK #{new_nick}"
     end
@@ -436,7 +434,7 @@ module Cinch
     # @since 2.1.0
     # @return [void]
     def oper(password, user = nil)
-      user ||= self.nick
+      user ||= nick
       @irc.send "OPER #{user} #{password}"
     end
 
@@ -454,16 +452,12 @@ module Cinch
         # if `base` is not in our list of nicks to try, assume that it's
         # custom and just append an underscore
         if !nicks.include?(base)
-          new_nick =  base + "_"
+          new_nick =  base + '_'
         else
           # if we have a base, try the next nick or append an
           # underscore if no more nicks are left
           new_index = nicks.index(base) + 1
-          if nicks[new_index]
-            new_nick = nicks[new_index]
-          else
-            new_nick = base + "_"
-          end
+          new_nick = nicks[new_index] || base + '_'
         end
       else
         # if we have no base, try the first possible nick

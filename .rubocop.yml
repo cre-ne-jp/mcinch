@@ -42,6 +42,15 @@ Layout/SpaceAroundMethodCallOperator:
 Style/ExponentialNotation:
   Enabled: true
 
+Style/IfUnlessModifier:
+  Enabled: false
+
+Style/WhileUntilModifier:
+  Enabled: false
+
+Style/RescueStandardError:
+  EnforcedStyle: implicit
+
 Layout/LineLength:
   Max: 100
 
