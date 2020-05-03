@@ -227,7 +227,7 @@ module Cinch
     # @return [void]
     def quit(message = nil)
       @quitting = true
-      @quit_command = message ? "QUIT :#{message}" : "QUIT"
+      @quit_message = message ? "QUIT :#{message}" : "QUIT"
     end
 
     # Connects the bot to a server.

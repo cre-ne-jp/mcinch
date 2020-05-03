@@ -202,7 +202,7 @@ module Cinch
         while !@bot.quitting
           sleep 1
         end
-        self.send @bot.quit_message
+        send(@bot.quit_message)
       end
     end
 
