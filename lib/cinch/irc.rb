@@ -9,6 +9,9 @@ module Cinch
   # processing incoming and outgoing messages, creating Ruby objects
   # and invoking plugins.
   class IRC
+    # Use it to fix the encoding of SocketError message.
+    EXTERNAL_ENCODING_ON_LOAD = Encoding.default_external
+
     include Helpers
 
     # @return [ISupport]
@@ -55,6 +58,11 @@ module Cinch
         @bot.loggers.warn('Timed out while connecting')
         return false
       rescue SocketError => e
+        # In a Windows environment, the encoding of SocketError message may be
+        # ASCII-8BIT that causes Encoding::CompatibilityError. To prevent that
+        # error, the error message must be encoded to UTF-8.
+        e.message.force_encoding(EXTERNAL_ENCODING_ON_LOAD).encode!(Encoding::UTF_8)
+
         @bot.loggers.warn("Could not connect to the IRC server. Please check your network: #{e.message}")
         return false
       rescue => e
