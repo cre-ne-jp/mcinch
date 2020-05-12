@@ -1,7 +1,8 @@
-# coding: utf-8
-require 'helper'
+# frozen_string_literal: true
 
-class TargetTest < TestCase
+require_relative '../../test_helper'
+
+class TargetTest < Test::Unit::TestCase
   module MessageSplit
     Mask = 'msg_split!~msg_split@an-irc-client.some-provider.net'
     Command = 'NOTICE'

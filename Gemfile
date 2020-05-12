@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 group :test do
-  gem 'minitest-autotest'
+  gem 'test-unit'
   gem 'rubocop'
 end
 

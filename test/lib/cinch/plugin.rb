@@ -1,4 +1,6 @@
-require "helper"
+# frozen_string_literal: true
+
+require_relative '../../test_helper'
 
 module Cinch
   class CinchTestPluginWithoutName
@@ -6,7 +8,7 @@ module Cinch
   end
 end
 
-class PluginTest < TestCase
+class PluginTest < Test::Unit::TestCase
   def setup
     @bot = Cinch::Bot.new {
       self.loggers.clear

@@ -1,14 +1,18 @@
-require "helper"
+# frozen_string_literal: true
 
-class MaskTest < TestCase
+require_relative '../../test_helper'
+
+class MaskTest < Test::Unit::TestCase
   DefaultMask = "foo*!bar?@baz"
-  def setup
+
+  setup do
     @mask = Cinch::Mask.new(DefaultMask.dup)
   end
+
   test "Two equal masks should be equal" do
     mask2 = Cinch::Mask.new(DefaultMask.dup)
 
-    assert @mask == mask2
+    assert_equal @mask, mask2
     assert @mask.eql?(mask2)
   end
 

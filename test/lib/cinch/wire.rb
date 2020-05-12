@@ -1,7 +1,9 @@
-require "helper"
+# frozen_string_literal: true
 
-class WireTest < TestCase
-  def setup
+require_relative '../../test_helper'
+
+class WireTest < Test::Unit::TestCase
+  setup do
     @bot = Cinch::Bot.new do
       self.loggers.clear
       @irc = Cinch::IRC.new(self)
