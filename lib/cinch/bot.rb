@@ -95,6 +95,7 @@ module Cinch
     # @since 1.1.0
     attr_reader :channel_list
 
+    # Whether the last connection was successful.
     # @return [Boolean]
     # @api private
     attr_accessor :last_connection_was_successful
@@ -233,8 +234,10 @@ module Cinch
     #
     # @param [Boolean] plugins Automatically register plugins from
     #   `@config.plugins.plugins`?
-    # @return [void]
+    # @return [Boolean] Whether the connection was successful.
     def start(plugins = true)
+      @last_connection_was_successful = false
+
       @reconnects = 0
       @plugins.register_plugins(@config.plugins.plugins) if plugins
 
@@ -289,6 +292,8 @@ module Cinch
           end
         end
       end while @config.reconnect && !@quitting
+
+      @last_connection_was_successful
     end
 
     # @endgroup
