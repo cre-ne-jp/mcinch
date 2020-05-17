@@ -29,6 +29,5 @@ Gem::Specification.new do |spec|
     '.yardopts',
     '{docs,lib,examples}/**/*',
   ]
-  spec.has_rdoc = 'yard'
   spec.require_paths = ['lib']
 end
