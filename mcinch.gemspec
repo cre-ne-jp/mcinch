@@ -19,6 +19,8 @@ Gem::Specification.new do |spec|
 
   spec.metadata['homepage_uri'] = s.homepage
   spec.metadata['source_code_uri'] = s.homepage
+  spec.metadata['bug_tracker_uri'] = "#{s.homepage}/issues"
+  spec.metadata['changelog_uri'] = "#{s.homepage}/blob/master/CHANGELOG.md"
 
   spec.files = Dir[
     'LICENSE',
