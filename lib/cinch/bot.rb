@@ -355,6 +355,8 @@ module Cinch
       @join_handler = nil
       @join_timer   = nil
 
+      @last_connection_was_successful = false
+
       super(nil, self)
       instance_eval(&b) if block_given?
     end
