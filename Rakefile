@@ -1,9 +1,12 @@
 require "rake/testtask"
 Rake::TestTask.new do |t|
-  t.test_files = Dir[
-    'test/lib/**/*_test.rb',
-    'test/*_test.rb'
-  ]
+  test_files = Dir['test/lib/**/*_test.rb']
+
+  unless Gem.win_platform?
+    test_files.push('test/connection_test.rb')
+  end
+
+  t.test_files = test_files
 end
 
 task :default => :test
