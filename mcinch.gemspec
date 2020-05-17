@@ -13,7 +13,7 @@ Gem::Specification.new do |spec|
   spec.description =
     'A fork of Cinch (IRC bot building framework) for easy embedding into another application. ' \
     'Some bugs are fixed too.'
-  spec.homepage = 'https://github.com/ochaochaocha3/mcinch'
+  spec.homepage = 'https://github.com/cre-ne-jp/mcinch'
   spec.license = "MIT"
   spec.required_ruby_version = Gem::Requirement.new('>= 2.5')
 
