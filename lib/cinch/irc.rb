@@ -54,19 +54,25 @@ module Cinch
         Timeout.timeout(@bot.config.timeouts.connect) do
           tcp_socket = TCPSocket.new(@bot.config.server, @bot.config.port, @bot.config.local_host)
         end
-      rescue Timeout::Error
+      rescue Timeout::Error => e
+        @bot.last_connection_error = e
         @bot.loggers.warn('Timed out while connecting')
+
         return false
       rescue SocketError => e
         # In a Windows environment, the encoding of SocketError message may be
         # ASCII-8BIT that causes Encoding::CompatibilityError. To prevent that
         # error, the error message must be encoded to UTF-8.
         e.message.force_encoding(EXTERNAL_ENCODING_ON_LOAD).encode!(Encoding::UTF_8)
+        @bot.last_connection_error = e
 
         @bot.loggers.warn("Could not connect to the IRC server. Please check your network: #{e.message}")
+
         return false
       rescue => e
+        @bot.last_connection_error = e
         @bot.loggers.exception(e)
+
         return false
       end
 
@@ -277,7 +283,10 @@ module Cinch
         @registration << msg.command
         if registered?
           events << [:connect]
+
           @bot.last_connection_was_successful = true
+          @bot.last_connection_error = nil
+
           on_connect(msg, events)
         end
       end

@@ -100,6 +100,11 @@ module Cinch
     # @api private
     attr_accessor :last_connection_was_successful
 
+    # The exception that occurred in the last connection.
+    # @return [StandardError, nil]
+    # @since 2.4.0
+    attr_accessor :last_connection_error
+
     # @return [Callback]
     # @api private
     attr_reader :callback
@@ -237,6 +242,7 @@ module Cinch
     # @return [Boolean] Whether the connection was successful.
     def start(plugins = true)
       @last_connection_was_successful = false
+      @last_connection_error = nil
 
       @reconnects = 0
       @plugins.register_plugins(@config.plugins.plugins) if plugins
@@ -356,6 +362,7 @@ module Cinch
       @join_timer   = nil
 
       @last_connection_was_successful = false
+      @last_connection_error = nil
 
       super(nil, self)
       instance_eval(&b) if block_given?
