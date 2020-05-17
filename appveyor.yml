@@ -1,3 +1,5 @@
+image: Visual Studio 2019
+
 environment:
   matrix:
     - RUBY_VERSION: 27-x64
